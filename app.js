@@ -254,6 +254,19 @@ function initBodyMap() {
 // 5. Supabase 클라우드 연동 로직
 // ==========================================
 async function loadAndInitSupabase() {
+  // URL 쿼리 파라미터에서 Supabase 키가 넘어왔는지 확인 (모바일 간편 로그인용)
+  const urlParams = new URLSearchParams(window.location.search);
+  const queryUrl = urlParams.get('supabase_url');
+  const queryKey = urlParams.get('supabase_key');
+  
+  if (queryUrl && queryKey) {
+    localStorage.setItem('mindflow_supabase_url', queryUrl);
+    localStorage.setItem('mindflow_supabase_key', queryKey);
+    // 보안을 위해 URL 주소창에서 키 파라미터 제거
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
   const url = localStorage.getItem('mindflow_supabase_url');
   const key = localStorage.getItem('mindflow_supabase_key');
   
@@ -286,6 +299,7 @@ async function loadAndInitSupabase() {
   
   // 설정 탭 내 이벤트 등록
   document.getElementById('btn-save-sync').addEventListener('click', saveSyncSettings);
+  document.getElementById('btn-copy-share-link').addEventListener('click', copyMobileShareLink);
   document.getElementById('btn-disconnect-sync').addEventListener('click', disconnectSync);
 }
 
@@ -376,6 +390,30 @@ function disconnectSync() {
       renderTimeline();
     });
   }
+}
+
+// 모바일 간편 동기화 링크 복사
+function copyMobileShareLink() {
+  const url = localStorage.getItem('mindflow_supabase_url');
+  const key = localStorage.getItem('mindflow_supabase_key');
+  
+  if (!url || !key) {
+    alert('먼저 이 기기(데스크톱)에서 연동을 성공적으로 완료한 후 링크를 복사할 수 있습니다.');
+    return;
+  }
+  
+  // 현재 도메인 주소와 쿼리 파라미터를 결합
+  const cleanUrl = window.location.origin + window.location.pathname;
+  const shareUrl = `${cleanUrl}?supabase_url=${encodeURIComponent(url)}&supabase_key=${encodeURIComponent(key)}`;
+  
+  // 클립보드 복사
+  navigator.clipboard.writeText(shareUrl).then(() => {
+    alert('모바일용 자동 연동 링크가 클립보드에 복사되었습니다!\n이 링크를 모바일 기기로 전송(카카오톡 등)한 뒤 클릭하여 접속하면 자동으로 동기화가 활성화됩니다.');
+  }).catch(err => {
+    console.error('클립보드 복사 실패:', err);
+    // 폴백: prompt 창 띄우기
+    prompt('복사 버튼이 작동하지 않는 환경입니다. 아래 전체 링크를 직접 복사해서 모바일에 보내주세요:', shareUrl);
+  });
 }
 
 function showSettingsMessage(text, type) {
