@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindFlow - CBT & 뇌과학 감정일기</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Libraries (Supabase, Chart.js, Lucide Icons) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- App Shell -->
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <i data-lucide="brain-circuit" class="logo-icon"></i>
+        <h1>MindFlow</h1>
+      </div>
+      <div class="sync-badge" id="syncBadge">
+        <span class="badge-dot"></span>
+        <span class="badge-text" id="syncBadgeText">로컬 모드</span>
+      </div>
+    </header>
+
+    <!-- Main Content Container (SPA Tabs) -->
+    <main class="app-content">
+      
+      <!-- Tab 1: 오늘의 기록 (Write Tab) -->
+      <section id="tab-write" class="tab-pane active">
+        <div class="card-intro">
+          <h2>오늘 마음은 흘러가고 있나요?</h2>
+          <p>지금 내면의 소리에 부드럽게 귀를 기울여 보세요. 무기력하다면 1단계만 작성해도 충분합니다.</p>
+        </div>
+
+        <form id="diaryForm" class="wizard-form">
+          
+          <!-- Step 1: 저에너지 체크인 -->
+          <div class="wizard-step" id="step-1">
+            <div class="step-header">
+              <span class="step-num">Step 1</span>
+              <h3>오늘의 기분과 활동 (저에너지 모드)</h3>
+            </div>
+            
+            <div class="form-group">
+              <label class="section-label">지금 내 기분 점수는?</label>
+              <div class="mood-selector">
+                <button type="button" class="mood-btn" data-mood="1">
+                  <span class="emoji">😭</span>
+                  <span class="label">최악</span>
+                </button>
+                <button type="button" class="mood-btn" data-mood="2">
+                  <span class="emoji">🙁</span>
+                  <span class="label">나쁨</span>
+                </button>
+                <button type="button" class="mood-btn" data-mood="3">
+                  <span class="emoji">😐</span>
+                  <span class="label">보통</span>
+                </button>
+                <button type="button" class="mood-btn" data-mood="4">
+                  <span class="emoji">🙂</span>
+                  <span class="label">좋음</span>
+                </button>
+                <button type="button" class="mood-btn" data-mood="5">
+                  <span class="emoji">😄</span>
+                  <span class="label">최고</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="section-label">오늘 어떤 활동을 하셨나요? (중복 선택)</label>
+              <div class="activity-grid">
+                <input type="checkbox" id="act-sleep" value="수면" name="activities" class="activity-checkbox">
+                <label for="act-sleep" class="activity-pill"><i data-lucide="moon"></i>충분한 수면</label>
+                
+                <input type="checkbox" id="act-exercise" value="운동" name="activities" class="activity-checkbox">
+                <label for="act-exercise" class="activity-pill"><i data-lucide="dumbbell"></i>운동</label>
+                
+                <input type="checkbox" id="act-food" value="식사" name="activities" class="activity-checkbox">
+                <label for="act-food" class="activity-pill"><i data-lucide="apple"></i>건강한 식사</label>
+                
+                <input type="checkbox" id="act-hobby" value="취미" name="activities" class="activity-checkbox">
+                <label for="act-hobby" class="activity-pill"><i data-lucide="palette"></i>취미 활동</label>
+                
+                <input type="checkbox" id="act-social" value="대화" name="activities" class="activity-checkbox">
+                <label for="act-social" class="activity-pill"><i data-lucide="users"></i>지인과 소통</label>
+                
+                <input type="checkbox" id="act-rest" value="휴식" name="activities" class="activity-checkbox">
+                <label for="act-rest" class="activity-pill"><i data-lucide="coffee"></i>진정한 휴식</label>
+                
+                <input type="checkbox" id="act-work" value="일/공부" name="activities" class="activity-checkbox">
+                <label for="act-work" class="activity-pill"><i data-lucide="briefcase"></i>일/공부</label>
+                
+                <input type="checkbox" id="act-nature" value="산책" name="activities" class="activity-checkbox">
+                <label for="act-nature" class="activity-pill"><i data-lucide="trees"></i>야외 산책</label>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" id="btn-quick-submit">이대로 초간편 완료</button>
+              <button type="button" class="btn btn-primary" id="btn-go-step2">감정/신체 매핑하기 <i data-lucide="arrow-right"></i></button>
+            </div>
+          </div>
+
+          <!-- Step 2: 감정 바퀴 및 신체 매핑 -->
+          <div class="wizard-step hidden" id="step-2">
+            <div class="step-header">
+              <span class="step-num">Step 2</span>
+              <h3>감정 어휘 및 신체 감각 맵핑</h3>
+            </div>
+            
+            <div class="mapping-container">
+              <!-- Emotion Wheel (Left or Top) -->
+              <div class="emotion-section">
+                <label class="section-label">내 감정 더 자세히 들여다보기 (감정 바퀴)</label>
+                <p class="section-desc">먼저 핵심 감정을 선택하면, 뇌과학 기반의 미세 감정 어휘가 활성화됩니다.</p>
+                
+                <div class="emotion-wheel-categories">
+                  <button type="button" class="em-cat-btn" data-cat="sadness">슬픔</button>
+                  <button type="button" class="em-cat-btn" data-cat="anger">분노</button>
+                  <button type="button" class="em-cat-btn" data-cat="anxiety">불안</button>
+                  <button type="button" class="em-cat-btn" data-cat="joy">기쁨</button>
+                  <button type="button" class="em-cat-btn" data-cat="hurt">상처</button>
+                  <button type="button" class="em-cat-btn" data-cat="lethargy">무기력</button>
+                </div>
+                
+                <div class="emotion-sub-words-container hidden" id="subWordsContainer">
+                  <div class="sub-words-title">세부 감정을 선택해 주세요 (다중 선택):</div>
+                  <div class="emotion-sub-words" id="subWordsList">
+                    <!-- Dynamic rendering -->
+                  </div>
+                </div>
+                
+                <div class="selected-emotions-display" id="selectedEmotionsDisplay">
+                  <!-- Selected words list -->
+                </div>
+              </div>
+
+              <!-- Body Map (Right or Bottom) -->
+              <div class="body-map-section">
+                <label class="section-label">지금 감정이 느껴지는 신체 부위는?</label>
+                <p class="section-desc">그 감정이 내 몸 어디를 긴장시키거나 저리게 만드나요? 부위를 누르면 감각의 물리적 강도(0~3단계)가 기록됩니다.</p>
+                
+                <div class="body-map-wrapper">
+                  <!-- Silhouette SVG -->
+                  <svg id="bodySilhouette" viewBox="0 0 200 450" class="body-svg">
+                    <!-- Head -->
+                    <circle cx="100" cy="55" r="28" class="body-part" data-part="head" />
+                    <!-- Neck -->
+                    <rect x="94" y="83" width="12" height="15" rx="3" class="body-part" data-part="neck" />
+                    <!-- Shoulders & Chest -->
+                    <path d="M 50 120 C 50 98, 150 98, 150 120 L 140 180 L 60 180 Z" class="body-part" data-part="chest" />
+                    <!-- Stomach -->
+                    <path d="M 60 180 L 140 180 L 135 250 L 65 250 Z" class="body-part" data-part="stomach" />
+                    <!-- Left Shoulder/Arm -->
+                    <path d="M 50 115 C 38 125, 20 180, 20 220 C 20 230, 32 230, 35 220 L 48 160 Z" class="body-part" data-part="leftArm" />
+                    <!-- Right Shoulder/Arm -->
+                    <path d="M 150 115 C 162 125, 180 180, 180 220 C 180 230, 168 230, 165 220 L 152 160 Z" class="body-part" data-part="rightArm" />
+                    <!-- Left Leg -->
+                    <path d="M 65 250 L 98 250 L 93 420 C 93 430, 75 430, 70 420 Z" class="body-part" data-part="leftLeg" />
+                    <!-- Right Leg -->
+                    <path d="M 102 250 L 135 250 L 130 420 C 130 430, 112 430, 107 420 Z" class="body-part" data-part="rightLeg" />
+                    
+                    <!-- Labels inside SVG -->
+                    <text x="100" y="58" class="svg-text">머리</text>
+                    <text x="100" y="140" class="svg-text">가슴</text>
+                    <text x="100" y="215" class="svg-text">복부</text>
+                    <text x="35" y="175" class="svg-text">왼팔</text>
+                    <text x="165" y="175" class="svg-text">오른팔</text>
+                    <text x="80" y="330" class="svg-text">왼다리</text>
+                    <text x="120" y="330" class="svg-text">오른다리</text>
+                  </svg>
+                  
+                  <div class="body-legend">
+                    <span class="legend-item"><span class="legend-color lvl-0"></span>없음</span>
+                    <span class="legend-item"><span class="legend-color lvl-1"></span>가벼움 (1)</span>
+                    <span class="legend-item"><span class="legend-color lvl-2"></span>중간 (2)</span>
+                    <span class="legend-item"><span class="legend-color lvl-3"></span>강함 (3)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" id="btn-back-step1"><i data-lucide="arrow-left"></i> 이전</button>
+              <button type="button" class="btn btn-primary" id="btn-go-step3">CBT 생각기록지 쓰기 <i data-lucide="arrow-right"></i></button>
+            </div>
+          </div>
+
+          <!-- Step 3: CBT 생각 기록지 -->
+          <div class="wizard-step hidden" id="step-3">
+            <div class="step-header">
+              <span class="step-num">Step 3</span>
+              <h3>CBT 인지행동 생각기록지</h3>
+            </div>
+            
+            <div class="form-group">
+              <label class="section-label" for="cbtEvent">1. 상황(Event) 객관화</label>
+              <p class="section-desc">무슨 일이 언제, 어디서 일어났나요? 사실 위주로 객관적으로 기록합니다.</p>
+              <textarea id="cbtEvent" name="cbtEvent" rows="2" placeholder="예: 약속 시간 30분이 지났는데 친구가 답장이 없고 연락이 닿지 않았다."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label class="section-label" for="cbtThought">2. 스쳐 지나간 자동적 사고(Automatic Thought)</label>
+              <p class="section-desc">그 상황이 생겼을 때 머릿속을 파고든 생각은 무엇이었나요?</p>
+              <textarea id="cbtThought" name="cbtThought" rows="2" placeholder="예: 걔는 나를 만만하게 보는 거야. 나를 싫어해서 무시하는 게 분명해."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="section-label">3. 내 생각 속 인지 왜곡 찾기 (체크리스트)</label>
+              <p class="section-desc">스쳐 지나간 생각은 나의 왜곡된 렌즈일 수 있습니다. 해당하는 인지 왜곡 유형을 선택해 보세요.</p>
+              <div class="distortion-grid">
+                <div class="distortion-item">
+                  <input type="checkbox" id="dist-1" value="흑백논리" name="cbtDistortions" class="distortion-checkbox">
+                  <label for="dist-1" class="distortion-card">
+                    <strong>흑백논리 (All-or-Nothing)</strong>
+                    <span>성공 아니면 실패, 내 편 아니면 적으로 극단적으로 나눕니다.</span>
+                  </label>
+                </div>
+                
+                <div class="distortion-item">
+                  <input type="checkbox" id="dist-2" value="파국화" name="cbtDistortions" class="distortion-checkbox">
+                  <label for="dist-2" class="distortion-card">
+                    <strong>파국화 (Catastrophizing)</strong>
+                    <span>일어날 수 있는 최악의 상황만 떠올리고 절망합니다.</span>
+                  </label>
+                </div>
+
+                <div class="distortion-item">
+                  <input type="checkbox" id="dist-3" value="독심술" name="cbtDistortions" class="distortion-checkbox">
+                  <label for="dist-3" class="distortion-card">
+                    <strong>독심술 (Mind Reading)</strong>
+                    <span>근거 없이 타인이 나를 부정적으로 평가하고 있을 거라고 확신합니다.</span>
+                  </label>
+                </div>
+
+                <div class="distortion-item">
+                  <input type="checkbox" id="dist-4" value="감정적 판단" name="cbtDistortions" class="distortion-checkbox">
+                  <label for="dist-4" class="distortion-card">
+                    <strong>감정적 판단 (Emotional Reasoning)</strong>
+                    <span>'불안하니까 무조건 위험한 상황이다'처럼 내 감정을 사실로 믿습니다.</span>
+                  </label>
+                </div>
+
+                <div class="distortion-item">
+                  <input type="checkbox" id="dist-5" value="과도한 일반화" name="cbtDistortions" class="distortion-checkbox">
+                  <label for="dist-5" class="distortion-card">
+                    <strong>과도한 일반화 (Overgeneralization)</strong>
+                    <span>한두 번의 부정적인 일로 '항상 이럴 것이다'라고 낙인찍습니다.</span>
+                  </label>
+                </div>
+
+                <div class="distortion-item">
+                  <input type="checkbox" id="dist-6" value="개인화" name="cbtDistortions" class="distortion-checkbox">
+                  <label for="dist-6" class="distortion-card">
+                    <strong>개인화 (Personalization)</strong>
+                    <span>나와 전혀 상관없는 외부 사건들을 내 탓으로 돌려 죄책감을 느낍니다.</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group alert-box">
+              <div class="alert-title">
+                <i data-lucide="help-circle"></i>
+                <strong>소크라테스식 자가 질문</strong>
+              </div>
+              <p class="alert-content">
+                "내 소중한 친구가 지금 나와 <strong>완전히 똑같은 상황</strong>에 처해 있고, 나와 똑같은 생각에 괴로워하고 있다면, 나는 그 친구에게 뭐라고 따뜻하게 조언해 줄까요?"
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label class="section-label" for="cbtAlternative">4. 합리적인 대안 사고 도출 (Alternative Thought)</label>
+              <p class="section-desc">위의 조언을 바탕으로, 원래의 자동적 사고를 반박할 수 있는 객관적인 대안 사고를 적어보세요.</p>
+              <textarea id="cbtAlternative" name="cbtAlternative" rows="2" placeholder="예: 친구에게 급한 사정이 생겼거나 사고가 났을 수도 있다. 예전에도 바쁜 일이 있으면 답이 늦는 편이었다. 날 싫어해서 답하지 않는 건 지나친 비약이다."></textarea>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" id="btn-back-step2"><i data-lucide="arrow-left"></i> 이전</button>
+              <button type="button" class="btn btn-primary" id="btn-go-step4">마지막: 감사일기 쓰기 <i data-lucide="arrow-right"></i></button>
+            </div>
+          </div>
+
+          <!-- Step 4: 감사 일기 -->
+          <div class="wizard-step hidden" id="step-4">
+            <div class="step-header">
+              <span class="step-num">Step 4</span>
+              <h3>세 가지 감사 일기</h3>
+            </div>
+            <p class="step-intro-desc">사소하고 평범한 일도 좋습니다. 감사함을 찾고 기록하는 뇌 훈련은 세로토닌과 도파민 분비를 촉진해 뇌 회로를 재배선합니다.</p>
+            
+            <div class="form-group">
+              <div class="gratitude-inputs">
+                <div class="grat-row">
+                  <span class="grat-num">1</span>
+                  <input type="text" name="gratitude1" class="grat-input" placeholder="예: 오늘 아침 마신 카푸치노가 따뜻하고 맛있어서 감사합니다.">
+                </div>
+                <div class="grat-row">
+                  <span class="grat-num">2</span>
+                  <input type="text" name="gratitude2" class="grat-input" placeholder="예: 약속이 밀렸지만 덕분에 혼자 책을 읽으며 고요한 휴식을 취해 감사합니다.">
+                </div>
+                <div class="grat-row">
+                  <span class="grat-num">3</span>
+                  <input type="text" name="gratitude3" class="grat-input" placeholder="예: 밤길을 걷다 올려다본 밤하늘이 예뻐서 감사합니다.">
+                </div>
+              </div>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-secondary" id="btn-back-step3"><i data-lucide="arrow-left"></i> 이전</button>
+              <button type="submit" class="btn btn-success" id="btn-submit-diary"><i data-lucide="check-circle"></i> 기록 완료하고 저장</button>
+            </div>
+          </div>
+
+        </form>
+      </section>
+      
+      <!-- Tab 2: 인사이트 (Insights Tab) -->
+      <section id="tab-insights" class="tab-pane">
+        <div class="card-intro">
+          <h2>마음 트렌드 & 뇌과학 분석</h2>
+          <p>시간에 따른 감정 상태 변화와 내 신체-활동 간의 연결 고리를 탐색하세요.</p>
+        </div>
+
+        <div class="insights-grid">
+          <!-- Calendar Card -->
+          <div class="insight-card calendar-card">
+            <h3><i data-lucide="calendar"></i> 감정 캘린더</h3>
+            <div class="calendar-controls">
+              <button type="button" id="prev-month" class="cal-arrow-btn"><i data-lucide="chevron-left"></i></button>
+              <span id="calendar-month-year" class="calendar-title">2026년 6월</span>
+              <button type="button" id="next-month" class="cal-arrow-btn"><i data-lucide="chevron-right"></i></button>
+            </div>
+            
+            <div class="calendar-grid-header">
+              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+              <!-- Rendered via JS -->
+            </div>
+            
+            <div class="calendar-legend">
+              <span class="cal-legend-dot m1"></span>최악
+              <span class="cal-legend-dot m2"></span>나쁨
+              <span class="cal-legend-dot m3"></span>보통
+              <span class="cal-legend-dot m4"></span>좋음
+              <span class="cal-legend-dot m5"></span>최고
+            </div>
+          </div>
+          
+          <!-- Statistics charts -->
+          <div class="insight-card">
+            <h3><i data-lucide="trending-up"></i> 감정 점수 트렌드</h3>
+            <div class="chart-container">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <h3><i data-lucide="activity"></i> 활동과 감정 상관관계</h3>
+            <p class="section-desc">특정 활동을 했을 때의 평균 기분지수입니다. 어떤 활동이 나를 웃게 만드는지 확인해 보세요.</p>
+            <div class="chart-container">
+              <canvas id="correlationChart"></canvas>
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <h3><i data-lucide="pie-chart"></i> 인지 왜곡 & 감정 빈도</h3>
+            <div class="chart-container">
+              <canvas id="distortionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: 마음 저장소 (History Tab) -->
+      <section id="tab-history" class="tab-pane">
+        <div class="card-intro">
+          <h2>마음 기록 보관소</h2>
+          <p>언제든 나의 생각 극복과 성장 과정을 돌아볼 수 있습니다.</p>
+        </div>
+
+        <div class="timeline-filters">
+          <button type="button" class="filter-btn active" data-filter="all">전체 기록</button>
+          <button type="button" class="filter-btn" data-filter="cbt">CBT 기록만</button>
+          <button type="button" class="filter-btn" data-filter="gratitude">감사일기만</button>
+        </div>
+
+        <div class="timeline" id="historyTimeline">
+          <!-- Dynamically Rendered History Cards -->
+        </div>
+      </section>
+
+      <!-- Tab 4: 설정 (Settings Tab) -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="card-intro">
+          <h2>동기화 및 환경 설정</h2>
+          <p>데스크톱과 모바일 간의 동기화 설정을 구성하고 관리합니다.</p>
+        </div>
+
+        <div class="settings-container">
+          <div class="settings-card">
+            <h3><i data-lucide="cloud-lightning"></i> Supabase 클라우드 동기화</h3>
+            <p class="settings-desc">본인의 Supabase 프로젝트 정보를 입력하여 데스크톱, 모바일 어디서나 접속해 실시간으로 데이터를 관리하세요. 데이터베이스 구축 방법은 아래 가이드를 참고하세요.</p>
+            
+            <div class="form-group">
+              <label for="supabaseUrl">Supabase URL</label>
+              <input type="text" id="supabaseUrl" placeholder="https://xxxxxx.supabase.co" class="settings-input">
+            </div>
+
+            <div class="form-group">
+              <label for="supabaseKey">Supabase API Key (Anon Key)</label>
+              <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="settings-input">
+            </div>
+
+            <div class="settings-actions">
+              <button type="button" class="btn btn-primary" id="btn-save-sync"><i data-lucide="save"></i> 연동 설정 및 동기화</button>
+              <button type="button" class="btn btn-secondary" id="btn-disconnect-sync"><i data-lucide="link-2-off"></i> 연동 해제 (로컬 모드로 회귀)</button>
+            </div>
+            
+            <div id="settings-status-message" class="settings-message"></div>
+          </div>
+
+          <div class="settings-card guide-card">
+            <h3><i data-lucide="help-circle"></i> Supabase 연동 가이드</h3>
+            <ol class="guide-list">
+              <li><a href="https://supabase.com" target="_blank">Supabase.com</a>에 접속해 무료 가입합니다.</li>
+              <li>새 프로젝트(New Project)를 임의의 이름으로 생성합니다.</li>
+              <li>생성 직후 화면에 제공되거나, <strong>Project Settings -> API</strong>에서 <code>Project URL</code> 및 <code>API Key (anon/public)</code>를 확인해 복사합니다.</li>
+              <li>좌측 메뉴에서 <strong>SQL Editor</strong>를 열고, <strong>New query</strong>를 누릅니다.</li>
+              <li>우측 [implementation_plan.md]에 안내된 <strong>Supabase SQL 스크립트</strong>(테이블 생성 쿼리)를 복사해 SQL Editor에 붙여넣은 뒤 <strong>Run</strong> 버튼을 눌러 실행합니다.</li>
+              <li>이 화면으로 돌아와 URL과 Key를 붙여넣고 [연동 설정]을 완료하면, 기존의 오프라인 데이터가 내 개인 Supabase 데이터베이스로 즉시 마이그레이션 및 동기화됩니다!</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile-friendly) -->
+    <nav class="app-nav">
+      <button type="button" class="nav-item active" data-tab="tab-write">
+        <i data-lucide="pen-tool"></i>
+        <span>기록하기</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="tab-insights">
+        <i data-lucide="pie-chart"></i>
+        <span>인사이트</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="tab-history">
+        <i data-lucide="book-open"></i>
+        <span>저장소</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="tab-settings">
+        <i data-lucide="settings"></i>
+        <span>설정</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Detail View Modal -->
+  <div class="modal" id="detailModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <button type="button" class="modal-close" id="btn-close-modal"><i data-lucide="x"></i></button>
+      <div id="modal-body-content">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
