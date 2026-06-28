@@ -253,54 +253,61 @@ function initBodyMap() {
 // ==========================================
 // 5. Supabase 클라우드 연동 로직
 // ==========================================
-async function loadAndInitSupabase() {
-  // URL 쿼리 파라미터에서 Supabase 키가 넘어왔는지 확인 (모바일 간편 로그인용)
-  const urlParams = new URLSearchParams(window.location.search);
-  const queryUrl = urlParams.get('supabase_url');
-  const queryKey = urlParams.get('supabase_key');
-  
-  if (queryUrl && queryKey) {
-    localStorage.setItem('mindflow_supabase_url', queryUrl);
-    localStorage.setItem('mindflow_supabase_key', queryKey);
-    // 보안을 위해 URL 주소창에서 키 파라미터 제거
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-  }
+const SUPABASE_URL = "https://zaahrmuensivneddumkl.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphYWhybXVlbnNpdm5lZGR1bWtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjQyMjgsImV4cCI6MjA5ODA0MDIyOH0.Nmz0Q2NJE_o0e6kBII3XEikklqkPLv_kK3DZy-33FCU";
 
-  const url = localStorage.getItem('mindflow_supabase_url');
-  const key = localStorage.getItem('mindflow_supabase_key');
-  
+async function loadAndInitSupabase() {
+  // 이전 로컬스토리지 설정값 클리어하여 충돌 예방
+  localStorage.removeItem('mindflow_supabase_url');
+  localStorage.removeItem('mindflow_supabase_key');
+
   const statusInputUrl = document.getElementById('supabaseUrl');
   const statusInputKey = document.getElementById('supabaseKey');
   
-  if (url && key) {
-    statusInputUrl.value = url;
-    statusInputKey.value = key;
-    try {
-      state.supabaseClient = supabase.createClient(url, key);
-      // 단순 쿼리로 연결성 체크
-      const { error } = await state.supabaseClient
-        .from('diary_entries')
-        .select('id')
-        .limit(1);
-        
-      if (error) throw error;
+  if (statusInputUrl) {
+    statusInputUrl.value = SUPABASE_URL;
+    statusInputUrl.disabled = true;
+  }
+  if (statusInputKey) {
+    statusInputKey.value = "••••••••••••••••••••••••••••••••••••••••••••••••••••";
+    statusInputKey.disabled = true;
+  }
+  
+  try {
+    state.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 단순 쿼리로 연결성 체크
+    const { error } = await state.supabaseClient
+      .from('diary_entries')
+      .select('id')
+      .limit(1);
       
-      state.isSyncMode = true;
-      console.log('Supabase 클라우드 동기화 모드 활성화 성공');
-    } catch (e) {
-      console.error('Supabase 연결 오류, 로컬 모드로 전환:', e);
-      state.supabaseClient = null;
-      state.isSyncMode = false;
-    }
-  } else {
+    if (error) throw error;
+    
+    state.isSyncMode = true;
+    console.log('Supabase 클라우드 동기화 모드 활성화 성공 (코드 내장 설정 사용)');
+  } catch (e) {
+    console.error('Supabase 연결 오류, 로컬 모드로 전환:', e);
+    state.supabaseClient = null;
     state.isSyncMode = false;
   }
   
-  // 설정 탭 내 이벤트 등록
-  document.getElementById('btn-save-sync').addEventListener('click', saveSyncSettings);
-  document.getElementById('btn-copy-share-link').addEventListener('click', copyMobileShareLink);
-  document.getElementById('btn-disconnect-sync').addEventListener('click', disconnectSync);
+  // 설정 버튼 이벤트 처리 및 비활성화
+  const btnSaveSync = document.getElementById('btn-save-sync');
+  const btnCopyShareLink = document.getElementById('btn-copy-share-link');
+  const btnDisconnectSync = document.getElementById('btn-disconnect-sync');
+
+  if (btnSaveSync) {
+    btnSaveSync.disabled = true;
+    btnSaveSync.style.opacity = '0.5';
+    btnSaveSync.style.cursor = 'not-allowed';
+    btnSaveSync.innerHTML = '<i data-lucide="lock"></i> 클라우드 연동 완료';
+  }
+  if (btnCopyShareLink) {
+    btnCopyShareLink.style.display = 'none';
+  }
+  if (btnDisconnectSync) {
+    btnDisconnectSync.style.display = 'none';
+  }
 }
 
 function updateSyncBadge() {
@@ -316,105 +323,10 @@ function updateSyncBadge() {
   }
 }
 
-// 설정 저장 및 마이그레이션
-async function saveSyncSettings() {
-  const url = document.getElementById('supabaseUrl').value.trim();
-  const key = document.getElementById('supabaseKey').value.trim();
-  const messageEl = document.getElementById('settings-status-message');
-  
-  if (!url || !key) {
-    showSettingsMessage('URL과 API Key를 입력해 주세요.', 'error');
-    return;
-  }
-  
-  showSettingsMessage('연동 테스트 중입니다...', 'success');
-  
-  try {
-    const testClient = supabase.createClient(url, key);
-    // 테이블 연결 테스트
-    const { error } = await testClient.from('diary_entries').select('id').limit(1);
-    
-    if (error) throw error;
-    
-    // 연결 성공 -> 스토리지 저장
-    localStorage.setItem('mindflow_supabase_url', url);
-    localStorage.setItem('mindflow_supabase_key', key);
-    state.supabaseClient = testClient;
-    state.isSyncMode = true;
-    updateSyncBadge();
-    
-    // 로컬 데이터를 클라우드로 마이그레이션(동기화) 유도
-    const localEntries = JSON.parse(localStorage.getItem('mindflow_diary_entries') || '[]');
-    if (localEntries.length > 0) {
-      showSettingsMessage('연동 성공! 기존 로컬 데이터를 클라우드 데이터베이스로 업로드(동기화) 중입니다...', 'success');
-      
-      // 중복 방지를 위한 날짜 확인 또는 일괄 인서트
-      for (const entry of localEntries) {
-        // 기존 클라우드에 동일 날짜 데이터가 있는지 체크
-        const { data } = await testClient.from('diary_entries').select('id').eq('date', entry.date);
-        if (!data || data.length === 0) {
-          // 구조 일치화 후 업로드
-          const { id, created_at, ...cleanEntry } = entry;
-          await testClient.from('diary_entries').insert([cleanEntry]);
-        }
-      }
-      
-      // 마이그레이션 완료 후 로컬 캐시 클리어 (충돌 방지)
-      localStorage.removeItem('mindflow_diary_entries');
-    }
-    
-    showSettingsMessage('연동 및 데이터 동기화가 성공적으로 완료되었습니다!', 'success');
-    await refreshEntries();
-    renderTimeline();
-    
-  } catch (e) {
-    console.error(e);
-    showSettingsMessage(`연동 실패: ${e.message || 'API 정보 혹은 SQL 테이블 설정을 확인하세요.'}`, 'error');
-  }
-}
-
-// 연동 해제
-function disconnectSync() {
-  if (confirm('클라우드 연동을 해제하시겠습니까? 데이터는 클라우드에 계속 남아있으며, 이후 기록은 이 브라우저(로컬)에만 저장됩니다.')) {
-    localStorage.removeItem('mindflow_supabase_url');
-    localStorage.removeItem('mindflow_supabase_key');
-    state.supabaseClient = null;
-    state.isSyncMode = false;
-    updateSyncBadge();
-    
-    document.getElementById('supabaseUrl').value = '';
-    document.getElementById('supabaseKey').value = '';
-    
-    showSettingsMessage('연동이 해제되었습니다. 로컬 모드로 전환됩니다.', 'success');
-    refreshEntries().then(() => {
-      renderTimeline();
-    });
-  }
-}
-
-// 모바일 간편 동기화 링크 복사
-function copyMobileShareLink() {
-  const url = localStorage.getItem('mindflow_supabase_url');
-  const key = localStorage.getItem('mindflow_supabase_key');
-  
-  if (!url || !key) {
-    alert('먼저 이 기기(데스크톱)에서 연동을 성공적으로 완료한 후 링크를 복사할 수 있습니다.');
-    return;
-  }
-  
-  // 현재 도메인 주소와 쿼리 파라미터를 결합
-  const cleanUrl = window.location.origin + window.location.pathname;
-  const shareUrl = `${cleanUrl}?supabase_url=${encodeURIComponent(url)}&supabase_key=${encodeURIComponent(key)}`;
-  
-  // 클립보드 복사
-  navigator.clipboard.writeText(shareUrl).then(() => {
-    alert('모바일용 자동 연동 링크가 클립보드에 복사되었습니다!\n이 링크를 모바일 기기로 전송(카카오톡 등)한 뒤 클릭하여 접속하면 자동으로 동기화가 활성화됩니다.');
-  }).catch(err => {
-    console.error('클립보드 복사 실패:', err);
-    // 폴백: prompt 창 띄우기
-    prompt('복사 버튼이 작동하지 않는 환경입니다. 아래 전체 링크를 직접 복사해서 모바일에 보내주세요:', shareUrl);
-  });
-}
+// 수동 설정 비활성화로 인한 더미 함수 유지 (참조 오류 방지)
+async function saveSyncSettings() {}
+function disconnectSync() {}
+function copyMobileShareLink() {}
 
 function showSettingsMessage(text, type) {
   const el = document.getElementById('settings-status-message');

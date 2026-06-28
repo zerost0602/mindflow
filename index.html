@@ -409,43 +409,38 @@
       <section id="tab-settings" class="tab-pane">
         <div class="card-intro">
           <h2>동기화 및 환경 설정</h2>
-          <p>데스크톱과 모바일 간의 동기화 설정을 구성하고 관리합니다.</p>
+          <p>데스크톱과 모바일 간의 동기화가 기본적으로 활성화되어 있습니다.</p>
         </div>
 
         <div class="settings-container">
           <div class="settings-card">
             <h3><i data-lucide="cloud-lightning"></i> Supabase 클라우드 동기화</h3>
-            <p class="settings-desc">본인의 Supabase 프로젝트 정보를 입력하여 데스크톱, 모바일 어디서나 접속해 실시간으로 데이터를 관리하세요. 데이터베이스 구축 방법은 아래 가이드를 참고하세요.</p>
+            <p class="settings-desc">서버에 고유한 Supabase 클라우드 연동 정보가 내장되어 동작하고 있습니다. 별도의 회원 가입이나 수동 API 설정이 필요 없으며, 기기 간 실시간 데이터 동기화가 기본 제공됩니다.</p>
             
             <div class="form-group">
-              <label for="supabaseUrl">Supabase URL</label>
-              <input type="text" id="supabaseUrl" placeholder="https://xxxxxx.supabase.co" class="settings-input">
+              <label for="supabaseUrl">Supabase URL (연결 주소)</label>
+              <input type="text" id="supabaseUrl" class="settings-input" disabled>
             </div>
 
             <div class="form-group">
-              <label for="supabaseKey">Supabase API Key (Anon Key)</label>
-              <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="settings-input">
+              <label for="supabaseKey">Supabase API Key (인증 키)</label>
+              <input type="password" id="supabaseKey" class="settings-input" disabled>
             </div>
 
             <div class="settings-actions">
-              <button type="button" class="btn btn-primary" id="btn-save-sync"><i data-lucide="save"></i> 연동 설정 및 동기화</button>
-              <button type="button" class="btn btn-success" id="btn-copy-share-link"><i data-lucide="share-2"></i> 모바일 간편 연동 링크 복사</button>
-              <button type="button" class="btn btn-secondary" id="btn-disconnect-sync"><i data-lucide="link-2-off"></i> 연동 해제 (로컬 모드로 회귀)</button>
+              <button type="button" class="btn btn-primary" id="btn-save-sync" disabled><i data-lucide="lock"></i> 클라우드 연동 완료</button>
             </div>
             
             <div id="settings-status-message" class="settings-message"></div>
           </div>
 
           <div class="settings-card guide-card">
-            <h3><i data-lucide="help-circle"></i> Supabase 연동 가이드</h3>
-            <ol class="guide-list">
-              <li><a href="https://supabase.com" target="_blank">Supabase.com</a>에 접속해 무료 가입합니다.</li>
-              <li>새 프로젝트(New Project)를 임의의 이름으로 생성합니다.</li>
-              <li>생성 직후 화면에 제공되거나, <strong>Project Settings -> API</strong>에서 <code>Project URL</code> 및 <code>API Key (anon/public)</code>를 확인해 복사합니다.</li>
-              <li>좌측 메뉴에서 <strong>SQL Editor</strong>를 열고, <strong>New query</strong>를 누릅니다.</li>
-              <li>우측 [implementation_plan.md]에 안내된 <strong>Supabase SQL 스크립트</strong>(테이블 생성 쿼리)를 복사해 SQL Editor에 붙여넣은 뒤 <strong>Run</strong> 버튼을 눌러 실행합니다.</li>
-              <li>이 화면으로 돌아와 URL과 Key를 붙여넣고 [연동 설정]을 완료하면, 기존의 오프라인 데이터가 내 개인 Supabase 데이터베이스로 즉시 마이그레이션 및 동기화됩니다!</li>
-            </ol>
+            <h3><i data-lucide="shield-check"></i> 데이터 보안 및 동기화 안내</h3>
+            <ul class="guide-list" style="list-style-type: disc; padding-left: 20px;">
+              <li style="margin-bottom: 8px;">작성하신 모든 감정일기 및 CBT 생각기록은 암호화 보안 연결(HTTPS)을 통해 안전하게 Supabase 클라우드 데이터베이스에 실시간으로 저장됩니다.</li>
+              <li style="margin-bottom: 8px;">본 서비스에 내장된 API Key는 <code>Anon Key</code>로, 테이블 보안 규칙(Row Level Security)에 기반하여 사용자 데이터를 철저히 보호하고 있습니다.</li>
+              <li style="margin-bottom: 8px;">모바일 혹은 다른 데스크톱 기기에서도 동일한 도메인 주소로 접속하면, 귀하의 감정 데이터를 동일하게 공유받고 실시간 조회 및 작성을 이어서 진행할 수 있습니다.</li>
+            </ul>
           </div>
         </div>
       </section>
